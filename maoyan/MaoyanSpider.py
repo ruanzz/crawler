@@ -1,9 +1,9 @@
 import json
 import re
+import time
 from multiprocessing.pool import Pool
 
 import requests
-import time
 from requests import RequestException
 
 
@@ -54,12 +54,22 @@ def parse_one_page(html):
 
 
 def write_to_file(item):
+    '''
+        写入文件
+    :param item:
+    :return:
+    '''
     with open("result.txt", 'a', encoding='utf-8') as f:
         f.write(json.dumps(item, ensure_ascii=False) + "\n")
         f.close()
 
 
 def excute(start_page):
+    '''
+        逻辑业务执行入口
+    :param start_page:
+    :return:
+    '''
     url = "http://maoyan.com/board/4?" + str(start_page)
     html = get_one_page(url=url)
     # print(html)
