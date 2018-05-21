@@ -2,6 +2,7 @@ import json
 import os
 import re
 from hashlib import md5
+from multiprocessing.pool import Pool
 from urllib.parse import urlencode
 
 import pymongo
@@ -11,7 +12,7 @@ from requests import RequestException
 
 from toutiao.config import *
 
-client = pymongo.MongoClient(MONGO_URL)
+client = pymongo.MongoClient(MONGO_URL, connect=False)
 db = client[MONGO_DB]
 
 
@@ -44,7 +45,6 @@ def get(url, resourceType='HTML'):
     :return:
         请求结果
     '''
-    print(resourceType)
     cookie = {
         'CNZZDATA1259612802': '1709103399-1526899528-https%253A%252F%252Fwww.baidu.com%252F%7C1526904961',
         'UM_distinctid': '1638273f577506-0c474b93935793-336d7705-fa000-1638273f578308',
@@ -79,11 +79,13 @@ def parse_page_index(result):
     :param result:
     :return:  详情页url
     '''
-    data = json.loads(result)
-    if data and 'data' in data.keys():
-        for item in data.get('data'):
-            yield item.get("article_url")
-
+    try:
+        data = json.loads(result)
+        if data and 'data' in data.keys():
+            for item in data.get('data'):
+                yield item.get("article_url")
+    except Exception:
+        pass
 
 def parse_page_detail(url):
     '''
@@ -94,26 +96,29 @@ def parse_page_detail(url):
     respone = get(url)
     if not respone:
         return None
-    soup = BeautifulSoup(respone, 'lxml')
-    title = soup.select('title')[0].get_text()
-    pattern = re.compile('.*?gallery: JSON.parse\("(.*?)"\)', re.S)
-    result = re.search(pattern, respone)
-    if result:
-        json_info = result.group(1).replace('\\', '').replace('\\\\', '')
-        # print(json_info)
-        gallery = json.loads(json_info)
-        if gallery and 'sub_images' in gallery.keys():
-            sub_images = gallery.get('sub_images')
-            # print('=========')
-            # print(sub_images)
-            image_url_list = [item.get('url') for item in sub_images]
-            for image_url in image_url_list: download_image(image_url)
-            yield {
-                'title': title,
-                'url': url,
-                'images': image_url_list
-            }
+    try:
+        soup = BeautifulSoup(respone, 'lxml')
+        title = soup.select('title')[0].get_text()
+        pattern = re.compile('.*?gallery: JSON.parse\("(.*?)"\)', re.S)
+        result = re.search(pattern, respone)
+        if result:
+            json_info = result.group(1).replace('\\', '').replace('\\\\', '')
+            # print(json_info)
+            gallery = json.loads(json_info)
+            if gallery and 'sub_images' in gallery.keys():
+                sub_images = gallery.get('sub_images')
+                # print('=========')
+                # print(sub_images)
+                image_url_list = [item.get('url') for item in sub_images]
+                for image_url in image_url_list: download_image(image_url)
+                yield {
+                    'title': title,
+                    'url': url,
+                    'images': image_url_list
+                }
 
+    except Exception:
+        pass
 
 def save(record):
     '''
@@ -140,16 +145,17 @@ def download_image(url):
     path = '{0}/{1}.{2}'.format(img_root, md5(content).hexdigest(), 'JPG')
     if not os.path.exists(path):
         with open(path, 'wb') as f:
+            print('下载【' + url + "】")
             f.write(content)
             f.close()
 
 
-def handle():
+def handle(offset):
     '''
         处理业务逻辑
     :return:
     '''
-    result = get_page_index(0, '超跑')
+    result = get_page_index(offset, KEYWORD)
     data = parse_page_index(result)
     for url in data:
         items = parse_page_detail(url)
@@ -158,4 +164,6 @@ def handle():
 
 
 if __name__ == '__main__':
-    handle()
+    groups = [x * 20 for x in range(PAGE_START, PAGE_END)]
+    pool = Pool()
+    pool.map(handle, groups)
