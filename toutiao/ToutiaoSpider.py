@@ -10,7 +10,7 @@ import requests
 from bs4 import BeautifulSoup
 from requests import RequestException
 
-from toutiao.config import *
+from config.config import *
 
 client = pymongo.MongoClient(MONGO_URL, connect=False)
 db = client[MONGO_DB]
@@ -126,7 +126,7 @@ def save(record):
     :param record:
     :return:
     '''
-    if db[MONGO_TABLE].insert(record):
+    if db[MONGO_TABLE_TOUTIAO].insert(record):
         print("保存【" + record.get('url') + "】")
         return True
     return False
