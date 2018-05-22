@@ -87,6 +87,7 @@ def parse_page_index(result):
     except Exception:
         pass
 
+
 def parse_page_detail(url):
     '''
         使用BeautifulSoup解析详情页
@@ -120,13 +121,14 @@ def parse_page_detail(url):
     except Exception:
         pass
 
+
 def save(record):
     '''
         保存记录到MongoDB
     :param record:
     :return:
     '''
-    if db[MONGO_TABLE_TOUTIAO].insert(record):
+    if db[TOUTIAO_TABLE].insert(record):
         print("保存【" + record.get('url') + "】")
         return True
     return False
@@ -155,7 +157,7 @@ def handle(offset):
         处理业务逻辑
     :return:
     '''
-    result = get_page_index(offset, KEYWORD)
+    result = get_page_index(offset, TOUTIAO_KEYWORD)
     data = parse_page_index(result)
     for url in data:
         items = parse_page_detail(url)
@@ -164,6 +166,6 @@ def handle(offset):
 
 
 if __name__ == '__main__':
-    groups = [x * 20 for x in range(PAGE_START, PAGE_END)]
+    groups = [x * 20 for x in range(TOUTIAO_PAGE_START, TOUTIAO_PAGE_END)]
     pool = Pool()
     pool.map(handle, groups)

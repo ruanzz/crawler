@@ -3,13 +3,14 @@ MONGO_URL = '127.0.0.1'
 MONGO_DB = 'crawler'
 
 ############# TOUTIAO ############
-MONGO_TABLE_TOUTIAO = 'toutiao'
+TOUTIAO_TABLE = 'toutiao'
 # PAGES
-PAGE_START = 1
-PAGE_END = 5
+TOUTIAO_PAGE_START = 1
+TOUTIAO_PAGE_END = 5
 # KW
-KEYWORD = '超跑'
+TOUTIAO_KEYWORD = '超跑'
 
 ############ TAOBAO ###############
-MONGO_TABLE_TAOBAO = 'taobao'
-SERVICE_ARGS = ['--load-images=false', '--disk-cache=true']
+TAOBAO_TABLE = 'taobao'
+TAOBAO_KEYWORD = '美食'
+TAOBAO_SERVICE_ARGS = ['--load-images=false', '--disk-cache=true']
